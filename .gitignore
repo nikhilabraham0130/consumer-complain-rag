@@ -1,0 +1,66 @@
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Environment Variables & Secrets (NEVER COMMIT .env)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Local Scratchpads & Working Notes
+.work/
+.scratch/
+scratch/
+*.tmp
+~$*.doc*
+~$*.docx
+
+# Data & Datasets (Avoid committing massive bulk data)
+data/raw/
+data/processed/
+data/cache/
+*.csv
+*.parquet
+*.jsonl
+*.tar.gz
+*.zip
+
+# Vector Stores & Model Weights
+chroma_db/
+qdrant_storage/
+faiss_index/
+models/
+checkpoints/
+runs/
+wandb/
+
+# Distribution & Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDE & OS Specific
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
