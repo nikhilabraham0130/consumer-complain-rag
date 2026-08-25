@@ -5,7 +5,7 @@ Defines strict data contracts, field validation rules, and custom exception type
 
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
 
 # =============================================================================
@@ -45,14 +45,23 @@ class CFPBRawSource(BaseModel):
     sub_product: Optional[str] = None
     issue: str
     sub_issue: Optional[str] = None
-    consumer_complaint_narrative: Optional[str] = None
+    consumer_complaint_narrative: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("consumer_complaint_narrative", "complaint_what_happened"),
+    )
     company: str
     state: Optional[str] = None
     zip_code: Optional[str] = None
     submitted_via: Optional[str] = None
-    company_response_to_consumer: Optional[str] = Field(default="In progress", alias="company_response_to_consumer")
+    company_response_to_consumer: Optional[str] = Field(
+        default="In progress",
+        validation_alias=AliasChoices("company_response_to_consumer", "company_response"),
+    )
     timely: Optional[str] = "Yes"
-    consumer_disputed: Optional[str] = Field(default="N/A", alias="consumer_disputed?")
+    consumer_disputed: Optional[str] = Field(
+        default="N/A",
+        validation_alias=AliasChoices("consumer_disputed", "consumer_disputed?"),
+    )
 
     model_config = {
         "populate_by_name": True,
