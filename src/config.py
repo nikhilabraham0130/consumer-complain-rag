@@ -4,7 +4,7 @@ Uses Pydantic Settings to load configuration from environment variables and .env
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,26 +38,62 @@ class Settings(BaseSettings):
     MAX_API_RETRIES: int = 4
     BACKOFF_FACTOR: float = 1.5
     
-    # Target financial institutions for curated sampling
+    # -------------------------------------------------------------------------
+    # Corpus Design (see .work/deep_dive_plan.md Project 3, section 2)
+    # -------------------------------------------------------------------------
+    # The "Big 5" peer retail banks. Credit bureaus (Experian/TransUnion/Equifax)
+    # are deliberately excluded: their narratives are ~2.3x more templated
+    # (13.8% vs 6.1% near-duplicate pairs), they yield no monetary-relief
+    # outcomes, and unfiltered they dominate ~78% of the CFPB stream.
     TARGET_COMPANIES: List[str] = [
-        "JPMORGAN CHASE & CO.",
         "WELLS FARGO & COMPANY",
+        "JPMORGAN CHASE & CO.",
         "BANK OF AMERICA, NATIONAL ASSOCIATION",
-        "CITIBANK, N.A.",
         "CAPITAL ONE FINANCIAL CORPORATION",
-        "EQUIFAX, INC.",
-        "EXPERIAN INFORMATION SOLUTIONS INC.",
-        "TRANSUNION INTERMEDIATE HOLDINGS, INC."
+        "CITIBANK, N.A.",
     ]
-    
-    # Target products
-    TARGET_PRODUCTS: List[str] = [
-        "Checking or savings account",
-        "Credit card or prepaid card",
-        "Mortgage",
-        "Debt collection",
-        "Credit reporting, credit repair services, or other personal consumer reports"
-    ]
+
+    # CFPB renamed product categories over time, so one logical product family
+    # maps to several API values. Filtering on a single spelling silently drops
+    # records (e.g. "Credit card" vs "Credit card or prepaid card").
+    TARGET_PRODUCT_FAMILIES: Dict[str, List[str]] = {
+        "Checking or savings account": [
+            "Checking or savings account",
+        ],
+        "Credit card": [
+            "Credit card",
+            "Credit card or prepaid card",
+            "Prepaid card",
+        ],
+        "Mortgage": [
+            "Mortgage",
+        ],
+        "Debt collection": [
+            "Debt collection",
+        ],
+    }
+
+    # Date window for ingestion (CFPB publishes narratives on a lag)
+    INGEST_DATE_MIN: str = "2022-01-01"
+    INGEST_DATE_MAX: str = "2023-12-31"
+
+    # Safety guard: max pages fetched per company x product cell. Prevents an
+    # unfillable quota from paging through the entire 1.69M-row corpus.
+    MAX_PAGES_PER_CELL: int = 60
+
+    @property
+    def ALL_TARGET_PRODUCTS(self) -> List[str]:
+        """Flattened list of every CFPB product value across all target families."""
+        return [v for values in self.TARGET_PRODUCT_FAMILIES.values() for v in values]
+
+    @property
+    def PRODUCT_TO_FAMILY(self) -> Dict[str, str]:
+        """Reverse map from a raw CFPB product value to its normalized family name."""
+        return {
+            value: family
+            for family, values in self.TARGET_PRODUCT_FAMILIES.items()
+            for value in values
+        }
     
     # -------------------------------------------------------------------------
     # Logging & Environment

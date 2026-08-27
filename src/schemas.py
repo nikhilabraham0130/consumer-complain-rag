@@ -94,6 +94,25 @@ class CFPBApiResponse(BaseModel):
             extracted.append(CFPBRawSource.model_validate(source_data))
         return extracted
 
+    def next_cursor(self) -> Optional[str]:
+        """
+        Builds the `search_after` cursor for the following page.
+
+        The CFPB API is cursor-paginated, not offset-paginated: the `frm`
+        parameter is validated but ignored, so offset paging silently returns
+        page 1 forever. The cursor is "<score>_<complaint_id>" taken from the
+        last hit of the current page.
+        """
+        hit_list = self.hits.get("hits", [])
+        if not hit_list:
+            return None
+        last = hit_list[-1]
+        score = last.get("_score")
+        complaint_id = last.get("_source", {}).get("complaint_id")
+        if score is None or complaint_id is None:
+            return None
+        return f"{score}_{complaint_id}"
+
 
 # =============================================================================
 # Processed Complaint Model (Cleaned, Typed, Ready for Parquet & Embeddings)
