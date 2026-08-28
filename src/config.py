@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     
     # Cleaned parquet output path
     PROCESSED_PARQUET_FILE: Path = PROCESSED_DATA_DIR / "complaints_cleaned.parquet"
-    
+
     # -------------------------------------------------------------------------
     # CFPB API Ingestion Settings
     # -------------------------------------------------------------------------
@@ -96,6 +96,19 @@ class Settings(BaseSettings):
         }
     
     # -------------------------------------------------------------------------
+    # Retrieval & Reranking (see .work/phase3_hybrid_retrieval_plan.md)
+    # -------------------------------------------------------------------------
+    CHROMA_DB_DIR: Path = DATA_DIR / "chroma_db"
+    CHROMA_COLLECTION_NAME: str = "cfpb_complaints"
+    EMBEDDING_MODEL_NAME: str = "BAAI/bge-small-en-v1.5"
+    RERANKER_MODEL_NAME: str = "BAAI/bge-reranker-base"
+
+    RETRIEVAL_TOP_K: int = 50   # candidates pulled from EACH of BM25 / dense before fusion
+    RRF_K: int = 60             # standard RRF smoothing constant (Cormack et al.)
+    FINAL_TOP_N: int = 5        # results returned to the caller after MMR
+    MMR_LAMBDA: float = 0.6     # relevance vs. diversity tradeoff in MMR
+
+    # -------------------------------------------------------------------------
     # Logging & Environment
     # -------------------------------------------------------------------------
     ENVIRONMENT: str = "development"
@@ -105,6 +118,7 @@ class Settings(BaseSettings):
         """Helper to guarantee that data directories exist on disk."""
         self.RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        self.CHROMA_DB_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # Global singleton instance for import across the codebase
