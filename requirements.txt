@@ -15,6 +15,11 @@ pyarrow>=15.0.0
 rich>=13.7.0
 tqdm>=4.66.0
 
+# Retrieval & Reranking (Phase 3)
+chromadb>=0.5.5
+sentence-transformers>=3.0.0
+rank_bm25>=0.2.2
+
 # Testing & Quality
 pytest>=8.0.0
 pytest-mock>=3.14.0
