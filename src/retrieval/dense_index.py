@@ -49,11 +49,22 @@ class DenseIndex:
         self._client = chromadb.PersistentClient(path=str(persist_dir))
         self._collection = self._client.get_or_create_collection(name=collection_name)
 
+    # Chroma rejects a single upsert() call above this size (confirmed
+    # directly: 8,831 records in one call raised "Batch size of 8831 is
+    # greater than max batch size of 5461"). Kept comfortably under that.
+    _UPSERT_CHUNK_SIZE = 2000
+
     def build(self, df: pd.DataFrame, batch_size: int = 64) -> None:
         """
         Embeds `cleaned_narrative` for every row and upserts into Chroma with
-        `_METADATA_FIELDS` attached. No-ops if the collection is already
-        populated with `len(df)` records.
+        `_METADATA_FIELDS` attached, in chunks of `_UPSERT_CHUNK_SIZE` rows.
+        No-ops if the collection is already populated with `len(df)` records.
+
+        Chunked rather than one encode-everything-then-upsert-everything
+        call: each chunk is saved to disk as soon as it's embedded, so a
+        crash or interruption partway through only loses the current chunk's
+        work (minutes), not the entire run (previously ~19 minutes lost to
+        the batch-size error above, in full).
         """
         if self._collection.count() == len(df):
             return
@@ -67,22 +78,25 @@ class DenseIndex:
             df = df.copy()
             df["product_family"] = df["product"].map(settings.PRODUCT_TO_FAMILY).fillna("Other")
 
-        ids = df["complaint_id"].astype(str).tolist()
-        texts = df["cleaned_narrative"].tolist()
-        embeddings = self._model.encode(
-            texts, batch_size=batch_size, show_progress_bar=True, convert_to_numpy=True
-        )
-        metadatas = [
-            {field: _to_chroma_scalar(row[field]) for field in _METADATA_FIELDS}
-            for _, row in df.iterrows()
-        ]
+        for start in range(0, len(df), self._UPSERT_CHUNK_SIZE):
+            chunk = df.iloc[start : start + self._UPSERT_CHUNK_SIZE]
 
-        self._collection.upsert(
-            ids=ids,
-            embeddings=embeddings.tolist(),
-            documents=texts,
-            metadatas=metadatas,
-        )
+            ids = chunk["complaint_id"].astype(str).tolist()
+            texts = chunk["cleaned_narrative"].tolist()
+            embeddings = self._model.encode(
+                texts, batch_size=batch_size, show_progress_bar=True, convert_to_numpy=True
+            )
+            metadatas = [
+                {field: _to_chroma_scalar(row[field]) for field in _METADATA_FIELDS}
+                for _, row in chunk.iterrows()
+            ]
+
+            self._collection.upsert(
+                ids=ids,
+                embeddings=embeddings.tolist(),
+                documents=texts,
+                metadatas=metadatas,
+            )
 
     def search(self, query: str, top_k: int) -> List[Tuple[str, float, List[float]]]:
         """

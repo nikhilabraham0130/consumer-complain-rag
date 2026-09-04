@@ -1,70 +1,49 @@
 # 📍 Project State & Agent Handoff
 
-**Active Phase:** Phase 3 — Hybrid Retrieval & Reranking Engine
-**Current Milestone:** Not started — scaffolding only (config + deps)
-**Last Updated By:** Claude Code (2026-09-01)
+**Active Phase:** Phase 4 — Golden Evaluation Benchmark (Transitioning to Phase 5 & 6)  
+**Current Milestone:** Golden set construction complete (1,825 labeled judgements across 50 queries)  
+**Last Updated By:** Antigravity (2026-09-04)  
 
-Phase numbers below are fixed by `.work/deep_dive_plan.md` (Project 3 section) —
-that file is the source of truth for phase numbering. Don't renumber locally;
-if a phase list conflicts with that file, the file wins.
+Phase numbers below follow `.work/deep_dive_plan.md` (Project 3 section) — that file is the source of truth for phase numbering.
 
 ---
 
 ## 1. Completed So Far
 
 - [x] **Phase 1 — Ingestion pipeline:**
-  - `src/ingestion/cfpb_client.py`: cursor pagination (`search_after`), 20-cell balanced grid sampling
-  - `src/schemas.py`: Pydantic models with `AliasChoices` mapping the CFPB API's actual field names
-    (`complaint_what_happened` not `consumer_complaint_narrative`; `company_response` not
-    `company_response_to_consumer`)
+  - `src/ingestion/cfpb_client.py`: cursor pagination (`search_after`), 20-cell balanced grid sampling.
+  - `src/schemas.py`: Pydantic models with `AliasChoices` mapping CFPB API fields.
+  - `src/ingestion/cleaner.py`: PII normalization and text scrubbing.
 - [x] **Phase 2 — Balanced corpus:**
-  - `data/processed/complaints_cleaned.parquet` — **8,831 rows, 0 duplicate complaint_ids,
-    5 banks** (Wells Fargo, Chase, BofA, Capital One, Citi — no credit bureaus),
-    17/20 company×product cells at full quota. Verified 2026-08-28.
-- [x] **Phase 3 scaffolding (config only, no retrieval code yet):**
-  - `pyproject.toml`: added `chromadb>=0.5.5`, `sentence-transformers>=3.0.0`, `rank_bm25>=0.2.2`
-  - `src/config.py`: added `CHROMA_DB_DIR`, `CHROMA_COLLECTION_NAME`, `EMBEDDING_MODEL_NAME`
-    (`BAAI/bge-small-en-v1.5`), `RERANKER_MODEL_NAME` (`BAAI/bge-reranker-base`),
-    `RETRIEVAL_TOP_K=50`, `RRF_K=60`, `FINAL_TOP_N=5`, `MMR_LAMBDA=0.6`
+  - `data/processed/complaints_cleaned.parquet` — 8,831 rows, 0 duplicate complaint_ids, 5 banks, 17/20 company×product cells at full quota.
+- [x] **Phase 3 — Hybrid Retrieval & Reranking Engine:**
+  - `src/retrieval/sparse_index.py`: BM25 via `rank_bm25` with regex citation carve-out (`§\d[\d.]*`).
+  - `src/retrieval/dense_index.py`: ChromaDB persistent index with BGE embeddings (`BAAI/bge-small-en-v1.5`), query instruction prefix, metadata preservation, and 2,000-row batch chunking.
+  - `src/retrieval/hybrid_search.py`: RRF fusion (`k=60`) → Cross-Encoder reranking (`BAAI/bge-reranker-base`) → MMR diversity selection (`lambda=0.6`).
+  - Comprehensive unit tests: 57/57 tests passing.
+- [x] **Phase 4 — Golden Evaluation Set Construction:**
+  - `evals/queries.py`: 50 evaluation queries (40 stratified across 5 banks × 4 products + 10 cross-bank queries).
+  - `evals/build_pools.py`: TREC-style pooling (union of top-20 BM25 and top-20 Dense).
+  - `evals/golden_set.jsonl`: Master dataset of 1,825 candidate judgements, 100% labeled (`relevant`, `partially_relevant`, `not_relevant`) with explicit reasoning.
 
-## 2. Known Gaps (do this before writing retrieval code)
+---
 
-- [ ] **`requirements.txt` was never updated** — only `pyproject.toml` has the new deps. The two
-  files have drifted; anyone running `pip install -r requirements.txt` won't get chromadb etc.
-  Fix this first.
+## 2. In Progress / Immediate Next Steps
 
-## 3. In Progress / Immediate Next Step
+- [ ] **Phase 4 Scaffolding Completion:**
+  - `evals/golden_set.py`: Clean dataset loader, label mapping (`relevant: 2`, `partially_relevant: 1`, `not_relevant: 0`), and schema verification.
+  - `tests/test_golden_set.py`: Pytest verification for golden set integrity.
+- [ ] **Phase 5 — Self-Querying & Grounded Generation:**
+  - `src/rag_pipeline.py`: Pydantic self-query filter extraction, grounded prompt synthesis with Complaint ID citations, and empirical resolution predictor with 95% CI.
+- [ ] **Phase 6 — Retrieval Ablation Study:**
+  - `evals/ablation.py`: Run all 50 queries against 5 configurations (BM25 only, Dense only, Hybrid+RRF, +Cross-Encoder, +MMR) and measure Recall@50, MRR@10, nDCG@10, and p95 latency.
 
-Full module-by-module spec: `.work/phase3_hybrid_retrieval_plan.md` — **read this before writing
-any retrieval code**, it fixes a real ordering bug from an earlier draft (see §4).
+---
 
-- [ ] `src/retrieval/sparse_index.py` — BM25 via `rank_bm25`. **Standard tokenizer** (lowercase,
-  strip punctuation, static stopword list), with **one** regex carve-out for `§\d[\d.]*` citations
-  (e.g. `§1005.11`). Not a custom financial tokenizer — `cleaner.py` already collapses every dollar
-  amount to the literal token `[AMOUNT]` in Phase 1, so there's nothing left to preserve there.
-- [ ] `src/retrieval/dense_index.py` — ChromaDB, persisted to `data/chroma_db/`. Must store
-  `company`, `product`, `product_family`, `date_received`, `has_monetary_relief`, `word_count` as
-  metadata alongside each embedding (Phase 5 self-querying needs to filter on these later —
-  embedding is the expensive step, don't make it redo-able).
-- [ ] `src/retrieval/hybrid_search.py` — RRF fuse → cross-encoder rerank → MMR select final top-5.
+## 3. Core Architectural Invariants (Do Not Change)
 
-## 4. Core Architectural Invariants (do not change without discussion)
-
-- **Pipeline order:** `RRF → Cross-Encoder (scores top-50) → MMR (selects final top-5)`.
-  MMR must run **last**, after the cross-encoder — not before it. If MMR runs first, the
-  pure-relevance cross-encoder rerank right after it can resurface near-duplicates and undo the
-  diversity fix. Whichever step runs last determines the output.
-- **CFPB ingestion:** never use offset/`frm` paging — the API validates it but silently ignores it
-  and repeats page 1. Always use `search_after` cursor pagination.
-- **Embeddings:** `BAAI/bge-small-en-v1.5`. **Reranker:** `BAAI/bge-reranker-base`. Both local/CPU,
-  $0 marginal cost.
-- **No `nltk`** — a first-run `nltk.download('punkt')` network call is a silent trap. Plain regex
-  tokenizer instead.
-- **Git:** neither agent runs commits automatically — the user reviews and commits.
-
-## 5. How to use this file
-
-Before starting work: read this file, then `.work/deep_dive_plan.md` if the phase/milestone needs
-more context. After finishing a chunk of work: update §1–3 here with what changed and what's next,
-then ask the user to review and commit — `STATE.md` travels with the commit, so switching agents
-mid-project means the next one reads accurate state instead of asking the user to re-explain it.
+- **Pipeline order:** `RRF → Cross-Encoder (scores top-50) → MMR (selects final top-5)`. Whichever runs last determines what the caller sees.
+- **CFPB ingestion:** Always use `search_after` cursor pagination; `frm` is ignored by the API.
+- **Models:** `BAAI/bge-small-en-v1.5` (embeddings) and `BAAI/bge-reranker-base` (reranking).
+- **ChromaDB upserts:** Always chunk upserts (`_UPSERT_CHUNK_SIZE = 2000`) to respect ChromaDB's max batch size limit (5,461).
+- **Git:** All git commits and pushes are executed manually by the user.

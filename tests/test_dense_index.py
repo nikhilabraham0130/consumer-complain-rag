@@ -110,6 +110,34 @@ def test_build_is_idempotent(index: DenseIndex, mocker: Any) -> None:
     spy.assert_not_called()
 
 
+def test_build_chunks_upserts_without_dropping_rows(tmp_path: Path) -> None:
+    """
+    Regression guard: Chroma rejects a single upsert() above ~5461 records
+    ("Batch size of 8831 is greater than max batch size of 5461") — hit for
+    real building the full 8,831-row corpus, after 19 minutes of embedding
+    work, because build() upserted everything in one call. Forces a tiny
+    chunk size here so 5 rows require 3 separate upsert() calls, and checks
+    every row survives split across them, none dropped or overwritten.
+    """
+    df = pd.DataFrame([
+        {"complaint_id": str(i), "company": "JPMORGAN CHASE & CO.", "product": "Mortgage",
+         "cleaned_narrative": f"Test narrative number {i} about a mortgage issue.",
+         "date_received": "2023-01-01", "has_monetary_relief": False, "word_count": 8}
+        for i in range(5)
+    ])
+
+    idx = DenseIndex(
+        persist_dir=tmp_path, collection_name="chunk_test",
+        model_name=settings.EMBEDDING_MODEL_NAME,
+    )
+    idx._UPSERT_CHUNK_SIZE = 2  # forces 3 chunks: [0,1], [2,3], [4]
+    idx.build(df)
+
+    assert idx._collection.count() == 5
+    results = idx.search("mortgage issue", top_k=5)
+    assert {cid for cid, _score, _emb in results} == {"0", "1", "2", "3", "4"}
+
+
 # =============================================================================
 # Integration: a slice of the real corpus (proves real dtypes don't crash build)
 # =============================================================================
