@@ -101,3 +101,4 @@ def test_audit_golden_set_report() -> None:
     assert stats["label_counts"]["relevant"] > 0
     assert stats["label_counts"]["partially_relevant"] > 0
     assert stats["label_counts"]["not_relevant"] > 0
+

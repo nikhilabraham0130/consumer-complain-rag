@@ -109,6 +109,20 @@ class Settings(BaseSettings):
     MMR_LAMBDA: float = 0.6     # relevance vs. diversity tradeoff in MMR
 
     # -------------------------------------------------------------------------
+    # LLM & Generation (Phase 5)
+    # -------------------------------------------------------------------------
+    DEEPSEEK_API_KEY: Optional[str] = None
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
+    DEEPSEEK_MODEL: str = "deepseek-chat"
+    GEMINI_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    LLM_TEMPERATURE: float = 0.1
+    LLM_MAX_RETRIES: int = 3
+    LLM_TIMEOUT_SECONDS: int = 60
+
+    # -------------------------------------------------------------------------
+
+
     # Logging & Environment
     # -------------------------------------------------------------------------
     ENVIRONMENT: str = "development"
