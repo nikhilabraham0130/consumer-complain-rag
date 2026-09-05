@@ -1,0 +1,42 @@
+[
+  {
+    "architecture": "BM25 Only",
+    "recall_at_50": 0.6413,
+    "mrr_at_10": 0.5359,
+    "ndcg_at_10": 0.4291,
+    "p50_latency_ms": 114.1,
+    "p95_latency_ms": 132.17
+  },
+  {
+    "architecture": "Dense BGE Only",
+    "recall_at_50": 0.8291,
+    "mrr_at_10": 0.7347,
+    "ndcg_at_10": 0.6671,
+    "p50_latency_ms": 85.02,
+    "p95_latency_ms": 130.24
+  },
+  {
+    "architecture": "Hybrid + RRF",
+    "recall_at_50": 1.0,
+    "mrr_at_10": 0.7708,
+    "ndcg_at_10": 0.6278,
+    "p50_latency_ms": 205.37,
+    "p95_latency_ms": 250.62
+  },
+  {
+    "architecture": "Hybrid + Local Cross-Encoder",
+    "recall_at_50": 1.0,
+    "mrr_at_10": 0.6452,
+    "ndcg_at_10": 0.5424,
+    "p50_latency_ms": 21404.75,
+    "p95_latency_ms": 21404.75
+  },
+  {
+    "architecture": "Hybrid + Cohere Rerank v3.5",
+    "recall_at_50": 1.0,
+    "mrr_at_10": 0.7021,
+    "ndcg_at_10": 0.6461,
+    "p50_latency_ms": 513.84,
+    "p95_latency_ms": 1093.75
+  }
+]
