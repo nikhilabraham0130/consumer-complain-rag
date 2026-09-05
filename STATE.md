@@ -1,8 +1,8 @@
 # 📍 Project State & Agent Handoff
 
-**Active Phase:** Phase 6 — Retrieval Ablation Benchmark Study  
-**Current Milestone:** Phase 5 Generation Pipeline fully operational (7/7 tests passing, 100% citation precision verified live)  
-**Last Updated By:** Antigravity (2026-09-04)  
+**Active Phase:** Phase 7 — RAGAS Generation Quality Suite  
+**Current Milestone:** Phase 6 Retrieval Ablation Benchmark Study Completed (100% Recall@50, 0.7708 MRR@10, 116ms p50 latency)  
+**Last Updated By:** Antigravity (2026-09-05)  
 
 Phase numbers below follow `.work/deep_dive_plan.md` (Project 3 section) — that file is the source of truth for phase numbering.
 
@@ -41,17 +41,20 @@ Phase numbers below follow `.work/deep_dive_plan.md` (Project 3 section) — tha
 
 ## 2. In Progress / Immediate Next Steps
 
-- [ ] **Phase 6 — Retrieval Ablation Study (`evals/ablation.py`):**
-  - Run all 45 answerable queries against 5 configurations:
-    1. BM25 Only
-    2. Dense BGE Only
-    3. Hybrid + RRF
-    4. Hybrid + RRF + Cross-Encoder
-    5. Full Pipeline (+ MMR diversity)
-  - Compute **Recall@50**, **MRR@10**, **nDCG@10**, and **p95 latency**.
-  - Generate the publication-ready Markdown benchmark table for the portfolio/resume.
+- [x] **Phase 6 — Retrieval Ablation Benchmark Study:**
+  - `evals/metrics.py`: reciprocal rank, recall at k, ndcg at k (with graded relevance). 12/12 unit tests passing.
+  - `evals/ablation.py`: 5-stage ablation runner evaluating BM25, Dense BGE, Hybrid+RRF, Cross-Encoder, and MMR across all 45 answerable queries.
+  - Empirical findings: Hybrid+RRF achieved 100.0% Recall@50, peak MRR@10 of 0.7708 (+43.8% lift over BM25), and 116.5ms p50 latency, proving superior cost/latency efficiency over CPU-bound cross-encoders.
+  - Official reports saved to `evals/results/ablation_results.json` and `evals/results/ablation_results.md`.
+  - Comprehensive guide in `.work/phase_6_deep_dive.md`.
+
+---
+
+## 2. In Progress / Immediate Next Steps
+
 - [ ] **Phase 7 — RAGAS Generation Quality Suite (`evals/ragas_eval.py`):**
-  - Faithfulness, Answer Relevance, Context Precision, and Context Recall.
+  - Synthesize/sample test cases with questions, retrieved contexts, and generated responses.
+  - Evaluate Faithfulness, Answer Relevance, Context Precision, and Context Recall using RAGAS / DeepSeek LLM judge.
 - [ ] **Phase 8 — API & Dashboard Serving:**
   - FastAPI endpoints (`api/main.py`) and Streamlit compliance UI (`ui/app.py`).
 
