@@ -1,8 +1,8 @@
 # 📍 Project State & Agent Handoff
 
-**Active Phase:** Phase 7 — RAGAS Generation Quality Suite  
-**Current Milestone:** Phase 6 Retrieval Ablation Benchmark Study Completed (100% Recall@50, 0.7708 MRR@10, 116ms p50 latency)  
-**Last Updated By:** Antigravity (2026-09-05)  
+**Active Phase:** Phase 8 — API & Dashboard Serving  
+**Current Milestone:** Phase 7 RAGAS Generation Quality Benchmark Completed (95.0% Faithfulness, 91.3% Relevance, 100% Citation Precision)  
+**Last Updated By:** Antigravity (2026-09-06)  
 
 Phase numbers below follow `.work/deep_dive_plan.md` (Project 3 section) — that file is the source of truth for phase numbering.
 
@@ -52,11 +52,28 @@ Phase numbers below follow `.work/deep_dive_plan.md` (Project 3 section) — tha
 
 ## 2. In Progress / Immediate Next Steps
 
-- [ ] **Phase 7 — RAGAS Generation Quality Suite (`evals/ragas_eval.py`):**
-  - Synthesize/sample test cases with questions, retrieved contexts, and generated responses.
-  - Evaluate Faithfulness, Answer Relevance, Context Precision, and Context Recall using RAGAS / DeepSeek LLM judge.
+- [x] **Phase 7 — RAGAS Generation Quality Suite:**
+  - `evals/ragas_schemas.py`: mathematical models and schemas for claim extraction, verification, and evaluation results.
+  - `src/utils/dns_patch.py`: network resiliency patch for DNS routing.
+  - `evals/ragas_eval.py`: full evaluation harness decomposing answers into atomic propositions audited by DeepSeek-V3 judge.
+  - Official benchmark executed across all 45 answerable queries:
+    - **Faithfulness (Factual Grounding):** 95.0% (PASS, >90% target)
+    - **Answer Relevance:** 91.3% (PASS, >85% target)
+    - **Citation Precision:** 100.0% (Deterministic guardrail)
+    - **Hallucination Rate:** 5.0% (SAFE, <10% target)
+  - Official reports saved to `evals/results/ragas_eval_results.json` and `evals/results/ragas_eval_results.md`.
+  - Comprehensive student learning guide in `.work/phase_7_deep_dive.md`.
+
+---
+
+## 2. In Progress / Immediate Next Steps
+
 - [ ] **Phase 8 — API & Dashboard Serving:**
-  - FastAPI endpoints (`api/main.py`) and Streamlit compliance UI (`ui/app.py`).
+  - FastAPI endpoints (`api/main.py`): `/query`, `/health`, `/metrics`.
+  - Streamlit compliance UI (`ui/app.py`): multi-bank search, citation verification badges, Wilson score relief probability charts, and telemetry breakdowns.
+- [ ] **Phase 9 — Production Packaging & Documentation:**
+  - Docker containerization (`Dockerfile`, `docker-compose.yml`).
+  - Production README with benchmark tables and architecture diagrams.
 
 ---
 

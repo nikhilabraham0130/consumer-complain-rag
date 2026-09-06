@@ -293,6 +293,10 @@ def run_ragas_benchmark(limit: Optional[int] = None) -> None:
                 f"Citations: [bold]{res.citation_precision * 100:.1f}%[/bold] "
                 f"({res.grounded_claims}/{res.total_claims} claims grounded, {elapsed:.1f}s)"
             )
+            # Incremental save to preserve progress
+            OUTPUT_JSON.parent.mkdir(parents=True, exist_ok=True)
+            with OUTPUT_JSON.open("w", encoding="utf-8") as f:
+                json.dump({"query_results": [r.model_dump() for r in results]}, f, indent=2)
         except Exception as e:
             console.print(f"       [red][FAIL][/red] Failed query {qid}: {e}")
 
@@ -361,16 +365,16 @@ def run_ragas_benchmark(limit: Optional[int] = None) -> None:
         }, f, indent=2)
 
     md_lines = [
-        f"# 🛡️ RAGAS Generation Quality Benchmark Results ({len(results)} Queries)",
+        f"# RAGAS Generation Quality Benchmark Results ({len(results)} Queries)",
         "",
         "Empirical assessment of hallucination rate, factual grounding, and answer relevance on CFPB compliance queries.",
         "",
         "| Generation Metric | Measured Score | Industry Production Target | Audit Verdict |",
         "| :--- | :---: | :---: | :---: |",
-        f"| **Faithfulness (Factual Grounding)** | **{summary.mean_faithfulness * 100:.1f}%** | > 90.0% | {'✅ PASS' if summary.mean_faithfulness >= 0.9 else '⚠️ REVIEW'} |",
-        f"| **Answer Relevance** | **{summary.mean_answer_relevance * 100:.1f}%** | > 85.0% | {'✅ PASS' if summary.mean_answer_relevance >= 0.85 else '⚠️ REVIEW'} |",
-        f"| **Citation Precision (Guardrail)** | **{summary.mean_citation_precision * 100:.1f}%** | 100.0% | {'✅ PASS (Deterministic)' if summary.mean_citation_precision == 1.0 else '❌ FAIL'} |",
-        f"| **Hallucination Rate** | **{summary.hallucination_rate * 100:.1f}%** | < 10.0% | {'✅ SAFE (< 10%)' if summary.hallucination_rate <= 0.1 else '❌ HIGH RISK'} |",
+        f"| **Faithfulness (Factual Grounding)** | **{summary.mean_faithfulness * 100:.1f}%** | > 90.0% | {'PASS' if summary.mean_faithfulness >= 0.9 else 'REVIEW'} |",
+        f"| **Answer Relevance** | **{summary.mean_answer_relevance * 100:.1f}%** | > 85.0% | {'PASS' if summary.mean_answer_relevance >= 0.85 else 'REVIEW'} |",
+        f"| **Citation Precision (Guardrail)** | **{summary.mean_citation_precision * 100:.1f}%** | 100.0% | {'PASS (Deterministic)' if summary.mean_citation_precision == 1.0 else 'FAIL'} |",
+        f"| **Hallucination Rate** | **{summary.hallucination_rate * 100:.1f}%** | < 10.0% | {'SAFE (< 10%)' if summary.hallucination_rate <= 0.1 else 'HIGH RISK'} |",
         "",
         "> **Methodology:** Every generated summary was decomposed into atomic factual propositions using an independent LLM judge. Each claim was checked against the retrieved CFPB complaint context. Citations were verified deterministically against candidate IDs.",
     ]
@@ -381,6 +385,6 @@ def run_ragas_benchmark(limit: Optional[int] = None) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run RAGAS Generation Quality Benchmark")
-    parser.add_argument("--limit", type=int, default=5, help="Number of benchmark queries to evaluate (default: 5)")
+    parser.add_argument("--limit", type=int, default=None, help="Number of benchmark queries to evaluate (default: all 45)")
     args = parser.parse_args()
     run_ragas_benchmark(limit=args.limit)

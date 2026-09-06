@@ -32,3 +32,4 @@ def _patched_getaddrinfo(host, port, *args, **kwargs):
 def apply_dns_patch() -> None:
     """Applies the safe DNS getaddrinfo patch."""
     socket.getaddrinfo = _patched_getaddrinfo
+
