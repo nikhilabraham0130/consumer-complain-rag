@@ -16,7 +16,10 @@ from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 
 from src.config import settings
+from src.utils.dns_patch import apply_dns_patch
 from src.utils.logger import get_logger
+
+apply_dns_patch()
 
 logger = get_logger("llm_client")
 
