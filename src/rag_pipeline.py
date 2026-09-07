@@ -276,8 +276,15 @@ class RAGPipeline:
         with full metadata from the corpus DataFrame.
         """
         # Execute hybrid search with semantic query
-        search_query = filters.semantic_query or query
-        raw_results = self.search_engine.search(query=search_query, top_n_final=top_n * 2)
+        # If a specific company is targeted, include company context in search_query and expand candidate pool
+        if filters.target_company:
+            search_query = f"{filters.target_company} {filters.semantic_query or query}"
+            candidate_pool = max(top_n * 6, 30)
+        else:
+            search_query = filters.semantic_query or query
+            candidate_pool = top_n * 2
+
+        raw_results = self.search_engine.search(query=search_query, top_n_final=candidate_pool)
 
         # Enrich with full narrative and outcome flag
         enriched = []
