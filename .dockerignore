@@ -25,3 +25,4 @@ ENV/
 
 # Sensitive environment variables (injected via compose or cloud secret manager)
 .env
+

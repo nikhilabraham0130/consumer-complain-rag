@@ -30,3 +30,4 @@ EXPOSE 8000 8501
 
 # Default command launches the FastAPI production backend
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
