@@ -5,6 +5,7 @@ Enterprise-grade interface for compliance officers, auditors, and legal investig
 Zero-emoji, minimalist institutional design system.
 """
 
+import os
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -23,7 +24,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 
 # Target financial institutions & products
 BIG_5_BANKS = [
