@@ -1,0 +1,27 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Git & IDE metadata
+.git/
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+
+# Local logs and temporary worktrees
+.work/
+*.log
+
+# Sensitive environment variables (injected via compose or cloud secret manager)
+.env
