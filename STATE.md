@@ -69,8 +69,13 @@ Phase numbers below follow `.work/deep_dive_plan.md` (Project 3 section) — tha
 ## 2. In Progress / Immediate Next Steps
 
 - [ ] **Phase 8 — API & Dashboard Serving:**
-  - FastAPI endpoints (`api/main.py`): `/query`, `/health`, `/metrics`.
-  - Streamlit compliance UI (`ui/app.py`): multi-bank search, citation verification badges, Wilson score relief probability charts, and telemetry breakdowns.
+  - [x] FastAPI production REST service (`api/main.py`):
+    - `POST /query`: Grounded synthesis inference with telemetry & guardrails.
+    - `GET /health`: Corpus & index readiness/liveness probe.
+    - `GET /metrics`: Automated telemetry exposing Phase 6 & Phase 7 benchmarks.
+    - `GET /benchmark/queries`: Catalog of 50 golden benchmark queries.
+    - Automated unit & integration tests (`tests/test_api.py`): 7/7 tests passing (95/95 total test suite passing).
+  - [ ] Streamlit compliance UI (`ui/app.py`): multi-bank search, citation verification badges, Wilson score relief probability charts, and telemetry breakdowns.
 - [ ] **Phase 9 — Production Packaging & Documentation:**
   - Docker containerization (`Dockerfile`, `docker-compose.yml`).
   - Production README with benchmark tables and architecture diagrams.
